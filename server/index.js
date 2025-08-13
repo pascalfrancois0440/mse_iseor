@@ -62,60 +62,6 @@ app.get('/test', (req, res) => {
   res.send('<h1>Backend MSE Diagnostic fonctionne !</h1><p>Port: ' + PORT + '</p>');
 });
 
-// Page de connexion simple
-app.get('/admin', (req, res) => {
-  res.send(`
-    <html>
-    <head><title>MSE Diagnostic - Admin</title></head>
-    <body style="font-family: Arial; max-width: 400px; margin: 50px auto; padding: 20px;">
-      <h2>🏢 MSE Diagnostic - Administration</h2>
-      <form action="/admin-login" method="post">
-        <p><label>Email:</label><br><input type="email" name="email" value="admin@mse-diagnostic.fr" style="width: 100%; padding: 8px;"></p>
-        <p><label>Mot de passe:</label><br><input type="password" name="password" value="Admin123!" style="width: 100%; padding: 8px;"></p>
-        <p><button type="submit" style="width: 100%; padding: 10px; background: #007bff; color: white; border: none;">Se connecter</button></p>
-      </form>
-    </body>
-    </html>
-  `);
-});
-
-// Traitement de la connexion
-app.post('/admin-login', express.urlencoded({ extended: true }), async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const User = require('./models/User');
-    const bcrypt = require('bcryptjs');
-    
-    const user = await User.findOne({ where: { email } });
-    if (!user || !await bcrypt.compare(password, user.password)) {
-      return res.send('<h2>❌ Email ou mot de passe incorrect</h2><a href="/admin">Retour</a>');
-    }
-    
-    res.send(`
-      <html>
-      <head><title>MSE Diagnostic - Dashboard</title></head>
-      <body style="font-family: Arial; max-width: 800px; margin: 50px auto; padding: 20px;">
-        <h1>🎉 Connexion réussie !</h1>
-        <h2>Bienvenue ${user.prenom} ${user.nom}</h2>
-        <p><strong>Email:</strong> ${user.email}</p>
-        <p><strong>Rôle:</strong> ${user.role}</p>
-        <p><strong>ID:</strong> ${user.id}</p>
-        <hr>
-        <h3>✅ Votre application MSE Diagnostic est déployée et fonctionnelle !</h3>
-        <p>🎯 <strong>Backend:</strong> Opérationnel</p>
-        <p>🎯 <strong>Base de données:</strong> Connectée</p>
-        <p>🎯 <strong>Authentification:</strong> Fonctionnelle</p>
-        <p>🎯 <strong>API:</strong> Accessible</p>
-        <hr>
-        <p><a href="/admin" style="color: #007bff;">Retour à la connexion</a></p>
-      </body>
-      </html>
-    `);
-  } catch (error) {
-    res.send('<h2>❌ Erreur: ' + error.message + '</h2><a href="/admin">Retour</a>');
-  }
-});
-
 // Route temporaire d'initialisation manuelle
 app.get('/api/init-admin', async (req, res) => {
   try {
