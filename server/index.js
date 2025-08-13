@@ -62,6 +62,71 @@ app.get('/test', (req, res) => {
   res.send('<h1>Backend MSE Diagnostic fonctionne !</h1><p>Port: ' + PORT + '</p>');
 });
 
+// Page de connexion temporaire pour test
+app.get('/login-test', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Test Connexion MSE Diagnostic</title>
+        <style>
+            body { font-family: Arial, sans-serif; max-width: 400px; margin: 50px auto; padding: 20px; }
+            .form-group { margin: 15px 0; }
+            label { display: block; margin-bottom: 5px; font-weight: bold; }
+            input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+            button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+            button:hover { background: #0056b3; }
+            .result { margin-top: 20px; padding: 10px; border-radius: 4px; }
+            .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+            .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        </style>
+    </head>
+    <body>
+        <h2>Test de Connexion MSE Diagnostic</h2>
+        <form id="loginForm">
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" id="email" value="admin@mse-diagnostic.fr" required>
+            </div>
+            <div class="form-group">
+                <label>Mot de passe:</label>
+                <input type="password" id="password" value="Admin123!" required>
+            </div>
+            <button type="submit">Se connecter</button>
+        </form>
+        <div id="result"></div>
+
+        <script>
+            document.getElementById('loginForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const resultDiv = document.getElementById('result');
+                
+                try {
+                    const response = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        resultDiv.innerHTML = '<div class="success"><h3>✅ Connexion réussie !</h3><p>Token: ' + data.token.substring(0, 50) + '...</p><p>Utilisateur: ' + data.user.email + '</p><p>Rôle: ' + data.user.role + '</p></div>';
+                    } else {
+                        resultDiv.innerHTML = '<div class="error"><h3>❌ Erreur de connexion</h3><p>' + data.message + '</p></div>';
+                    }
+                } catch (error) {
+                    resultDiv.innerHTML = '<div class="error"><h3>❌ Erreur réseau</h3><p>' + error.message + '</p></div>';
+                }
+            });
+        </script>
+    </body>
+    </html>
+  `);
+});
+
 // Route temporaire d'initialisation manuelle
 app.get('/api/init-admin', async (req, res) => {
   try {
