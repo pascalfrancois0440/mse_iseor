@@ -49,6 +49,39 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Route temporaire d'initialisation manuelle
+app.get('/api/init-admin', async (req, res) => {
+  try {
+    const User = require('./models/User');
+    const bcrypt = require('bcryptjs');
+    
+    // Supprimer l'admin existant s'il existe
+    await User.destroy({ where: { email: 'admin@mse-diagnostic.fr' } });
+    
+    // Créer un nouvel admin
+    const hashedPassword = await bcrypt.hash('Admin123!', 10);
+    const admin = await User.create({
+      nom: 'Administrateur',
+      prenom: 'MSE',
+      email: 'admin@mse-diagnostic.fr',
+      password: hashedPassword,
+      role: 'administrateur'
+    });
+    
+    res.json({ 
+      success: true, 
+      message: 'Compte administrateur créé avec succès',
+      admin: { id: admin.id, email: admin.email, role: admin.role }
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erreur lors de la création du compte',
+      error: error.message 
+    });
+  }
+});
+
 // Gestion des erreurs 404
 app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route non trouvée' });
