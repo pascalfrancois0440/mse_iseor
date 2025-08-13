@@ -4,14 +4,14 @@ FROM node:18-alpine as builder
 # Définir le répertoire de travail
 WORKDIR /app
 
-# Copier les fichiers de dépendances
-COPY package*.json ./
+# Copier les fichiers de dépendances depuis le dossier client
+COPY client/package*.json ./
 
 # Installer les dépendances
-RUN npm ci
+RUN npm install
 
-# Copier le code source
-COPY . .
+# Copier le code source du client
+COPY client/ ./
 
 # Build de l'application React
 RUN npm run build
@@ -23,7 +23,7 @@ FROM nginx:alpine
 COPY --from=builder /app/build /usr/share/nginx/html
 
 # Copier la configuration Nginx personnalisée
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY client/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Exposer le port 80
 EXPOSE 80
