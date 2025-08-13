@@ -60,8 +60,14 @@ router.post('/login', [
       return res.status(401).json({ message: 'Email ou mot de passe incorrect' });
     }
 
-    // Vérifier le mot de passe
+    // Vérifier le mot de passe avec debug
+    console.log('DEBUG AUTH - User found:', user.email);
+    console.log('DEBUG AUTH - Password provided:', password);
+    console.log('DEBUG AUTH - User password hash exists:', !!user.password);
+    
     const isValidPassword = await user.verifierMotDePasse(password);
+    console.log('DEBUG AUTH - Password valid:', isValidPassword);
+    
     if (!isValidPassword) {
       return res.status(401).json({ message: 'Email ou mot de passe incorrect' });
     }
