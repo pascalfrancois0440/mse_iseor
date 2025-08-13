@@ -45,8 +45,15 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     message: 'API MSE Diagnostic fonctionnelle',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    port: PORT,
+    env: process.env.NODE_ENV
   });
+});
+
+// Route de test simple
+app.get('/test', (req, res) => {
+  res.send('<h1>Backend MSE Diagnostic fonctionne !</h1><p>Port: ' + PORT + '</p>');
 });
 
 // Route temporaire d'initialisation manuelle
