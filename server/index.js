@@ -83,6 +83,42 @@ app.get('/api/debug-users', async (req, res) => {
   }
 });
 
+// Route de test login en GET (pour éviter CORS)
+app.get('/api/test-login', async (req, res) => {
+  try {
+    const User = require('./models/User');
+    
+    // Trouver l'utilisateur test
+    const user = await User.findOne({ 
+      where: { email: 'test@test.com', actif: true } 
+    });
+    
+    if (!user) {
+      return res.json({ success: false, message: 'Utilisateur test non trouvé' });
+    }
+    
+    console.log('DEBUG TEST-LOGIN - User found:', user.email);
+    console.log('DEBUG TEST-LOGIN - Password hash exists:', !!user.password);
+    
+    // Tester la vérification du mot de passe
+    const isValidPassword = await user.verifierMotDePasse('123');
+    console.log('DEBUG TEST-LOGIN - Password valid:', isValidPassword);
+    
+    res.json({ 
+      success: true,
+      userFound: true,
+      hasPassword: !!user.password,
+      passwordValid: isValidPassword
+    });
+  } catch (error) {
+    console.error('DEBUG TEST-LOGIN - Error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
 // Route de test avec mot de passe simple
 app.get('/api/create-test-user', async (req, res) => {
   try {
