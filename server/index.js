@@ -83,6 +83,39 @@ app.get('/api/debug-users', async (req, res) => {
   }
 });
 
+// Route de test avec mot de passe simple
+app.get('/api/create-test-user', async (req, res) => {
+  try {
+    const User = require('./models/User');
+    const bcrypt = require('bcryptjs');
+    
+    // Supprimer l'utilisateur test s'il existe
+    await User.destroy({ where: { email: 'test@test.com' } });
+    
+    // Créer un utilisateur test avec mot de passe simple
+    const testUser = await User.create({
+      nom: 'Test',
+      prenom: 'User',
+      email: 'test@test.com',
+      password: await bcrypt.hash('123', 10),
+      role: 'administrateur',
+      actif: true
+    });
+    
+    res.json({ 
+      success: true, 
+      message: 'Utilisateur test créé',
+      user: { id: testUser.id, email: testUser.email, role: testUser.role }
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erreur lors de la création du test',
+      error: error.message 
+    });
+  }
+});
+
 // Route temporaire d'initialisation manuelle
 app.get('/api/init-admin', async (req, res) => {
   try {

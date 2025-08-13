@@ -2,6 +2,9 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
+// Configuration de l'URL de base pour axios
+axios.defaults.baseURL = 'http://tsgc8coo0kgwgckgscwo0sg0.31.97.69.164.sslip.io';
+
 const AuthContext = createContext();
 
 export const useAuth = () => {

@@ -30,6 +30,34 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
+        {/* Debug Info */}
+        <div className="bg-blue-100 p-2 text-xs">
+          <p><strong>API URL:</strong> {process.env.REACT_APP_API_URL || 'Non définie'}</p>
+          <button 
+            onClick={() => {
+              fetch('http://tsgc8coo0kgwgckgscwo0sg0.31.97.69.164.sslip.io/api/create-test-user')
+                .then(r => r.json())
+                .then(data => {
+                  alert('Test User: ' + JSON.stringify(data));
+                  // Test login avec le compte test
+                  return fetch('http://tsgc8coo0kgwgckgscwo0sg0.31.97.69.164.sslip.io/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      email: 'test@test.com',
+                      password: '123'
+                    })
+                  });
+                })
+                .then(r => r.json())
+                .then(data => alert('Test Login: ' + JSON.stringify(data)))
+                .catch(err => alert('Erreur: ' + err.message));
+            }}
+            className="bg-purple-500 text-white px-2 py-1 text-xs rounded mt-1"
+          >
+            Test Simple
+          </button>
+        </div>
         {/* Header */}
         <div className="text-center">
           <div className="flex justify-center">
