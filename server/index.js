@@ -79,7 +79,8 @@ app.get('/api/init-admin', async (req, res) => {
       prenom: 'MSE',
       email: 'admin@mse-diagnostic.fr',
       password: hashedPassword,
-      role: 'administrateur'
+      role: 'administrateur',
+      actif: true
     });
     
     res.json({ 
