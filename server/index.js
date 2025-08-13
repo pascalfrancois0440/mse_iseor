@@ -69,10 +69,12 @@ async function startServer() {
     await sequelize.authenticate();
     console.log('✅ Connexion à la base de données établie');
     
-    if (process.env.NODE_ENV === 'development') {
-      await sequelize.sync({ alter: true });
-      console.log('✅ Tables synchronisées');
-    }
+    // Synchroniser les tables (development et production)
+    await sequelize.sync({ alter: process.env.NODE_ENV === 'development' });
+    console.log('✅ Tables synchronisées');
+    
+    // Initialiser les comptes admin permanents
+    await initializeAdminAccounts();
     
     app.listen(PORT, () => {
       console.log(`🚀 Serveur MSE Diagnostic démarré sur le port ${PORT}`);
@@ -81,6 +83,48 @@ async function startServer() {
   } catch (error) {
     console.error('❌ Impossible de démarrer le serveur:', error);
     process.exit(1);
+  }
+}
+
+// Fonction d'initialisation des comptes admin
+async function initializeAdminAccounts() {
+  try {
+    const User = require('./models/User');
+    const bcrypt = require('bcryptjs');
+    
+    // Créer l'admin permanent
+    const adminExists = await User.findOne({ where: { email: 'admin@mse-diagnostic.fr' } });
+    if (!adminExists) {
+      const hashedPassword = await bcrypt.hash('Admin123!', 10);
+      await User.create({
+        nom: 'Administrateur',
+        prenom: 'MSE',
+        email: 'admin@mse-diagnostic.fr',
+        motDePasse: hashedPassword,
+        role: 'admin'
+      });
+      console.log('✅ Compte administrateur créé');
+    } else {
+      console.log('✅ Compte administrateur vérifié');
+    }
+    
+    // Créer le consultant permanent
+    const consultantExists = await User.findOne({ where: { email: 'consultant@mse-diagnostic.fr' } });
+    if (!consultantExists) {
+      const hashedPassword = await bcrypt.hash('Consultant123!', 10);
+      await User.create({
+        nom: 'Consultant',
+        prenom: 'MSE',
+        email: 'consultant@mse-diagnostic.fr',
+        motDePasse: hashedPassword,
+        role: 'consultant'
+      });
+      console.log('✅ Compte consultant créé');
+    } else {
+      console.log('✅ Compte consultant vérifié');
+    }
+  } catch (error) {
+    console.error('❌ Erreur lors de l\'initialisation des comptes:', error);
   }
 }
 
