@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  # Base de données PostgreSQL
+  database:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: mse_diagnostic
+      POSTGRES_USER: mse_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - mse_network
+    restart: unless-stopped
+
+  # Backend API
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DATABASE_URL: postgresql://mse_user:${DB_PASSWORD}@database:5432/mse_diagnostic
+      JWT_SECRET: ${JWT_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL}
+      RATE_LIMIT_WINDOW_MS: 900000
+      RATE_LIMIT_MAX_REQUESTS: 100
+    depends_on:
+      - database
+    networks:
+      - mse_network
+    restart: unless-stopped
+    labels:
+      - "coolify.managed=true"
+      - "coolify.type=application"
+      - "coolify.name=mse-diagnostic-backend"
+
+  # Frontend React
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_URL: ${BACKEND_URL}
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - mse_network
+    restart: unless-stopped
+    labels:
+      - "coolify.managed=true"
+      - "coolify.type=application"
+      - "coolify.name=mse-diagnostic-frontend"
+      - "traefik.enable=true"
+      - "traefik.http.routers.mse-frontend.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.mse-frontend.tls=true"
+      - "traefik.http.routers.mse-frontend.tls.certresolver=letsencrypt"
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  mse_network:
+    driver: bridge
