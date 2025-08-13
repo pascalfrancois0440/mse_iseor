@@ -39,6 +39,9 @@ app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// Servir les fichiers statiques
+app.use(express.static('public'));
+
 // Routes API
 app.use('/api/auth', authRoutes);
 app.use('/api/entretiens', entretienRoutes);
