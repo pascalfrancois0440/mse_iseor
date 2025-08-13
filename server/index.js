@@ -100,8 +100,8 @@ async function initializeAdminAccounts() {
         nom: 'Administrateur',
         prenom: 'MSE',
         email: 'admin@mse-diagnostic.fr',
-        motDePasse: hashedPassword,
-        role: 'admin'
+        password: hashedPassword,
+        role: 'administrateur'
       });
       console.log('✅ Compte administrateur créé');
     } else {
@@ -116,7 +116,7 @@ async function initializeAdminAccounts() {
         nom: 'Consultant',
         prenom: 'MSE',
         email: 'consultant@mse-diagnostic.fr',
-        motDePasse: hashedPassword,
+        password: hashedPassword,
         role: 'consultant'
       });
       console.log('✅ Compte consultant créé');
