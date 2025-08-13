@@ -99,10 +99,24 @@ app.get('/api/test-login', async (req, res) => {
     
     console.log('DEBUG TEST-LOGIN - User found:', user.email);
     console.log('DEBUG TEST-LOGIN - Password hash exists:', !!user.password);
+    console.log('DEBUG TEST-LOGIN - Password hash:', user.password);
+    
+    // Test manuel avec bcrypt
+    const bcrypt = require('bcryptjs');
+    const manualTest = await bcrypt.compare('123', user.password);
+    console.log('DEBUG TEST-LOGIN - Manual bcrypt.compare:', manualTest);
     
     // Tester la vérification du mot de passe
     const isValidPassword = await user.verifierMotDePasse('123');
-    console.log('DEBUG TEST-LOGIN - Password valid:', isValidPassword);
+    console.log('DEBUG TEST-LOGIN - verifierMotDePasse result:', isValidPassword);
+    
+    // Test avec le mot de passe original avant hash
+    console.log('DEBUG TEST-LOGIN - Testing different passwords...');
+    const testPasswords = ['123', 'Admin123!', 'Consultant123!'];
+    for (const pwd of testPasswords) {
+      const result = await bcrypt.compare(pwd, user.password);
+      console.log(`DEBUG TEST-LOGIN - Password "${pwd}":`, result);
+    }
     
     res.json({ 
       success: true,
@@ -128,12 +142,12 @@ app.get('/api/create-test-user', async (req, res) => {
     // Supprimer l'utilisateur test s'il existe
     await User.destroy({ where: { email: 'test@test.com' } });
     
-    // Créer un utilisateur test avec mot de passe simple
+    // Créer un utilisateur test avec mot de passe simple (laisser le hook beforeCreate gérer le hash)
     const testUser = await User.create({
       nom: 'Test',
       prenom: 'User',
       email: 'test@test.com',
-      password: await bcrypt.hash('123', 10),
+      password: '123', // Mot de passe en clair - le hook beforeCreate va le hasher
       role: 'administrateur',
       actif: true
     });
@@ -156,18 +170,16 @@ app.get('/api/create-test-user', async (req, res) => {
 app.get('/api/init-admin', async (req, res) => {
   try {
     const User = require('./models/User');
-    const bcrypt = require('bcryptjs');
     
     // Supprimer l'admin existant s'il existe
     await User.destroy({ where: { email: 'admin@mse-diagnostic.fr' } });
     
-    // Créer un nouvel admin
-    const hashedPassword = await bcrypt.hash('Admin123!', 10);
-    const admin = await User.create({
+    // Créer le compte administrateur
+    const adminUser = await User.create({
       nom: 'Administrateur',
       prenom: 'MSE',
       email: 'admin@mse-diagnostic.fr',
-      password: hashedPassword,
+      password: 'Admin123!', // Mot de passe en clair - le hook beforeCreate va le hasher
       role: 'administrateur',
       actif: true
     });
@@ -175,7 +187,7 @@ app.get('/api/init-admin', async (req, res) => {
     res.json({ 
       success: true, 
       message: 'Compte administrateur créé avec succès',
-      admin: { id: admin.id, email: admin.email, role: admin.role }
+      admin: { id: adminUser.id, email: adminUser.email, role: adminUser.role }
     });
   } catch (error) {
     res.status(500).json({ 
@@ -232,13 +244,13 @@ async function initializeAdminAccounts() {
     // Créer l'admin permanent
     const adminExists = await User.findOne({ where: { email: 'admin@mse-diagnostic.fr' } });
     if (!adminExists) {
-      const hashedPassword = await bcrypt.hash('Admin123!', 10);
       await User.create({
         nom: 'Administrateur',
         prenom: 'MSE',
         email: 'admin@mse-diagnostic.fr',
-        password: hashedPassword,
-        role: 'administrateur'
+        password: 'Admin123!', // Mot de passe en clair - le hook beforeCreate va le hasher
+        role: 'administrateur',
+        actif: true
       });
       console.log('✅ Compte administrateur créé');
     } else {
@@ -248,13 +260,13 @@ async function initializeAdminAccounts() {
     // Créer le consultant permanent
     const consultantExists = await User.findOne({ where: { email: 'consultant@mse-diagnostic.fr' } });
     if (!consultantExists) {
-      const hashedPassword = await bcrypt.hash('Consultant123!', 10);
       await User.create({
         nom: 'Consultant',
         prenom: 'MSE',
         email: 'consultant@mse-diagnostic.fr',
-        password: hashedPassword,
-        role: 'consultant'
+        password: 'Consultant123!', // Mot de passe en clair - le hook beforeCreate va le hasher
+        role: 'consultant',
+        actif: true
       });
       console.log('✅ Compte consultant créé');
     } else {
