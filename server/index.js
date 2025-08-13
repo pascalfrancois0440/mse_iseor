@@ -63,6 +63,26 @@ app.get('/test', (req, res) => {
   res.send('<h1>Backend MSE Diagnostic fonctionne !</h1><p>Port: ' + PORT + '</p>');
 });
 
+// Route de debug pour vérifier la base de données
+app.get('/api/debug-users', async (req, res) => {
+  try {
+    const User = require('./models/User');
+    const users = await User.findAll({
+      attributes: ['id', 'email', 'role', 'actif', 'createdAt']
+    });
+    res.json({ 
+      success: true, 
+      count: users.length,
+      users: users 
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
 // Route temporaire d'initialisation manuelle
 app.get('/api/init-admin', async (req, res) => {
   try {
