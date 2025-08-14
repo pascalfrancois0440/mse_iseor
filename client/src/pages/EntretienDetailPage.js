@@ -302,7 +302,7 @@ const EntretienDetailPage = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Ratio CA</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {entretien.statistiques?.ratio_ca ? 
+                {entretien.statistiques?.ratio_ca && typeof entretien.statistiques.ratio_ca === 'number' ? 
                   `${entretien.statistiques.ratio_ca.toFixed(1)}%` : 
                   'N/A'
                 }
@@ -321,7 +321,7 @@ const EntretienDetailPage = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">PRISM</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {entretien.prism_calcule ? 
+                {entretien.prism_calcule && typeof entretien.prism_calcule === 'number' ? 
                   `${entretien.prism_calcule.toFixed(2)}€/h` : 
                   'N/A'
                 }
@@ -491,7 +491,7 @@ const EntretienDetailPage = () => {
                 <div>
                   <dt className="text-sm font-medium text-gray-500">PRISM calculé</dt>
                   <dd className="text-sm text-gray-900 font-medium">
-                    {entretien.prism_calcule ? 
+                    {entretien.prism_calcule && typeof entretien.prism_calcule === 'number' ? 
                       `${entretien.prism_calcule.toFixed(2)} €/heure` : 
                       'Non calculé'
                     }
