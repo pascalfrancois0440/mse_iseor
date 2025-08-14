@@ -128,8 +128,26 @@ const EntretienPage = () => {
         return;
       }
 
+      // Nettoyer les données - supprimer les champs vides
+      const cleanData = Object.keys(data).reduce((acc, key) => {
+        const value = data[key];
+        // Ne pas inclure les champs vides ou null
+        if (value !== '' && value !== null && value !== undefined) {
+          // Convertir les nombres en entiers si nécessaire
+          if (['ca_perimetre', 'marge_brute', 'heures_travaillees', 'effectif'].includes(key)) {
+            const numValue = parseFloat(value);
+            if (!isNaN(numValue) && numValue > 0) {
+              acc[key] = key === 'effectif' || key === 'heures_travaillees' ? parseInt(value) : numValue;
+            }
+          } else {
+            acc[key] = value;
+          }
+        }
+        return acc;
+      }, {});
+
       entretienMutation.mutate({
-        ...data,
+        ...cleanData,
         prism_calcule: prismCalcule
       });
     } catch (error) {
