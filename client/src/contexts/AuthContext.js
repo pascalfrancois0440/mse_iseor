@@ -3,7 +3,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 
 // Configuration de l'URL de base pour axios
-axios.defaults.baseURL = 'http://tsgc8coo0kgwgckgscwo0sg0.31.97.69.164.sslip.io';
+axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5002';
 
 const AuthContext = createContext();
 
