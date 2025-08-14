@@ -9,6 +9,7 @@ const entretienRoutes = require('./routes/entretiens');
 const dysfonctionnementRoutes = require('./routes/dysfonctionnements');
 const referentielRoutes = require('./routes/referentiel');
 const exportRoutes = require('./routes/exports');
+const initReferentielRoutes = require('./routes/init-referentiel');
 const { sequelize } = require('./config/database');
 
 const app = express();
@@ -46,6 +47,7 @@ app.use('/api/entretiens', entretienRoutes);
 app.use('/api/dysfonctionnements', dysfonctionnementRoutes);
 app.use('/api/referentiel', referentielRoutes);
 app.use('/api/exports', exportRoutes);
+app.use('/api/admin', initReferentielRoutes);
 
 // Route de santé
 app.get('/api/health', (req, res) => {
