@@ -327,7 +327,7 @@ router.get('/admin/users', authenticateToken, requireAdmin, async (req, res) => 
       where: whereClause,
       limit: parseInt(limit),
       offset: parseInt(offset),
-      order: [['created_at', 'DESC']],
+      order: [['createdAt', 'DESC']],
       attributes: { exclude: ['password', 'reset_password_token'] }
     });
 
