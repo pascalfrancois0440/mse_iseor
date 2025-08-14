@@ -179,10 +179,24 @@ router.post('/', [
   body('titre').trim().isLength({ min: 3 }),
   body('entreprise').trim().isLength({ min: 2 }),
   body('date_entretien').optional().isISO8601(),
-  body('ca_perimetre').optional().isNumeric(),
-  body('marge_brute').optional().isNumeric(),
-  body('heures_travaillees').optional().isInt({ min: 1 }),
-  body('effectif').optional().isInt({ min: 1 })
+  body('ca_perimetre').optional().custom(value => {
+    if (value === '' || value === null || value === undefined) return true;
+    return !isNaN(parseFloat(value));
+  }),
+  body('marge_brute').optional().custom(value => {
+    if (value === '' || value === null || value === undefined) return true;
+    return !isNaN(parseFloat(value));
+  }),
+  body('heures_travaillees').optional().custom(value => {
+    if (value === '' || value === null || value === undefined) return true;
+    const num = parseInt(value);
+    return !isNaN(num) && num >= 1;
+  }),
+  body('effectif').optional().custom(value => {
+    if (value === '' || value === null || value === undefined) return true;
+    const num = parseInt(value);
+    return !isNaN(num) && num >= 1;
+  })
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -193,8 +207,26 @@ router.post('/', [
       });
     }
 
+    // Nettoyer les données avant insertion - supprimer les champs vides
+    const cleanedBody = Object.keys(req.body).reduce((acc, key) => {
+      const value = req.body[key];
+      // Ne pas inclure les champs vides
+      if (value !== '' && value !== null && value !== undefined) {
+        // Convertir les nombres si nécessaire
+        if (['ca_perimetre', 'marge_brute', 'heures_travaillees', 'effectif'].includes(key)) {
+          const numValue = parseFloat(value);
+          if (!isNaN(numValue) && numValue > 0) {
+            acc[key] = ['effectif', 'heures_travaillees'].includes(key) ? parseInt(value) : numValue;
+          }
+        } else {
+          acc[key] = value;
+        }
+      }
+      return acc;
+    }, {});
+
     const entretienData = {
-      ...req.body,
+      ...cleanedBody,
       user_id: req.user.id
     };
 
