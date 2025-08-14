@@ -16,7 +16,10 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem('mse_user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('mse_token'));
 
@@ -80,6 +83,7 @@ export const AuthProvider = ({ children }) => {
       const { token: newToken, user: userData } = response.data;
       
       localStorage.setItem('mse_token', newToken);
+      localStorage.setItem('mse_user', JSON.stringify(userData));
       setToken(newToken);
       setUser(userData);
       
@@ -113,6 +117,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('mse_token');
+    localStorage.removeItem('mse_user');
     setToken(null);
     setUser(null);
     toast.success('Déconnexion réussie');
