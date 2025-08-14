@@ -77,9 +77,20 @@ router.post('/', [
   body('entretien_id').isUUID(),
   body('description').trim().isLength({ min: 10 }),
   body('frequence').isIn(['quotidien', 'hebdomadaire', 'mensuel', 'trimestriel', 'annuel', 'ponctuel']),
-  body('temps_par_occurrence').isInt({ min: 1 }),
-  body('personnes_impactees').isInt({ min: 1 }),
-  body('cout_direct').optional().isNumeric({ min: 0 })
+  body('temps_par_occurrence').custom(value => {
+    if (value === '' || value === null || value === undefined) return false; // Obligatoire
+    const num = parseInt(value);
+    return !isNaN(num) && num >= 1;
+  }),
+  body('personnes_impactees').custom(value => {
+    if (value === '' || value === null || value === undefined) return false; // Obligatoire
+    const num = parseInt(value);
+    return !isNaN(num) && num >= 1;
+  }),
+  body('cout_direct').optional().custom(value => {
+    if (value === '' || value === null || value === undefined) return true;
+    return !isNaN(parseFloat(value)) && parseFloat(value) >= 0;
+  })
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -102,7 +113,30 @@ router.post('/', [
       return res.status(404).json({ message: 'Entretien non trouvé' });
     }
 
-    const dysfonctionnement = await Dysfonctionnement.create(req.body);
+    // Nettoyer les données avant insertion - supprimer les champs vides et convertir les types
+    const cleanedBody = Object.keys(req.body).reduce((acc, key) => {
+      const value = req.body[key];
+      // Ne pas inclure les champs vides
+      if (value !== '' && value !== null && value !== undefined) {
+        // Convertir les nombres si nécessaire
+        if (['temps_par_occurrence', 'personnes_impactees'].includes(key)) {
+          const numValue = parseInt(value);
+          if (!isNaN(numValue) && numValue > 0) {
+            acc[key] = numValue;
+          }
+        } else if (key === 'cout_direct') {
+          const numValue = parseFloat(value);
+          if (!isNaN(numValue) && numValue >= 0) {
+            acc[key] = numValue;
+          }
+        } else {
+          acc[key] = value;
+        }
+      }
+      return acc;
+    }, {});
+
+    const dysfonctionnement = await Dysfonctionnement.create(cleanedBody);
 
     // Récupérer le dysfonctionnement avec les relations
     const dysfonctionnementComplet = await Dysfonctionnement.findByPk(dysfonctionnement.id, {
@@ -127,9 +161,20 @@ router.post('/', [
 router.put('/:id', [
   body('description').optional().trim().isLength({ min: 10 }),
   body('frequence').optional().isIn(['quotidien', 'hebdomadaire', 'mensuel', 'trimestriel', 'annuel', 'ponctuel']),
-  body('temps_par_occurrence').optional().isInt({ min: 1 }),
-  body('personnes_impactees').optional().isInt({ min: 1 }),
-  body('cout_direct').optional().isNumeric({ min: 0 })
+  body('temps_par_occurrence').optional().custom(value => {
+    if (value === '' || value === null || value === undefined) return true;
+    const num = parseInt(value);
+    return !isNaN(num) && num >= 1;
+  }),
+  body('personnes_impactees').optional().custom(value => {
+    if (value === '' || value === null || value === undefined) return true;
+    const num = parseInt(value);
+    return !isNaN(num) && num >= 1;
+  }),
+  body('cout_direct').optional().custom(value => {
+    if (value === '' || value === null || value === undefined) return true;
+    return !isNaN(parseFloat(value)) && parseFloat(value) >= 0;
+  })
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -153,7 +198,30 @@ router.put('/:id', [
       return res.status(404).json({ message: 'Dysfonctionnement non trouvé' });
     }
 
-    await dysfonctionnement.update(req.body);
+    // Nettoyer les données avant mise à jour - supprimer les champs vides et convertir les types
+    const cleanedBody = Object.keys(req.body).reduce((acc, key) => {
+      const value = req.body[key];
+      // Ne pas inclure les champs vides
+      if (value !== '' && value !== null && value !== undefined) {
+        // Convertir les nombres si nécessaire
+        if (['temps_par_occurrence', 'personnes_impactees'].includes(key)) {
+          const numValue = parseInt(value);
+          if (!isNaN(numValue) && numValue > 0) {
+            acc[key] = numValue;
+          }
+        } else if (key === 'cout_direct') {
+          const numValue = parseFloat(value);
+          if (!isNaN(numValue) && numValue >= 0) {
+            acc[key] = numValue;
+          }
+        } else {
+          acc[key] = value;
+        }
+      }
+      return acc;
+    }, {});
+
+    await dysfonctionnement.update(cleanedBody);
 
     // Récupérer le dysfonctionnement mis à jour avec les relations
     const dysfonctionnementMisAJour = await Dysfonctionnement.findByPk(dysfonctionnement.id, {
