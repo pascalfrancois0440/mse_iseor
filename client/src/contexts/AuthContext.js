@@ -3,7 +3,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 
 // Configuration de l'URL de base pour axios
-axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5002';
+axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5004';
 
 const AuthContext = createContext();
 
@@ -74,12 +74,16 @@ export const AuthProvider = ({ children }) => {
   }, [token]);
 
   const login = async (email, password) => {
+    console.log('🔍 FRONTEND LOGIN - Tentative connexion:', email);
+    console.log('🔍 FRONTEND LOGIN - URL API:', axios.defaults.baseURL);
+    
     try {
       const response = await axios.post('/api/auth/login', {
         email,
         password
       });
 
+      console.log('🔍 FRONTEND LOGIN - Réponse reçue:', response.data);
       const { token: newToken, user: userData } = response.data;
       
       localStorage.setItem('mse_token', newToken);
@@ -90,6 +94,10 @@ export const AuthProvider = ({ children }) => {
       toast.success(`Bienvenue ${userData.prenom} !`);
       return { success: true };
     } catch (error) {
+      console.log('🔍 FRONTEND LOGIN - Erreur:', error);
+      console.log('🔍 FRONTEND LOGIN - Status:', error.response?.status);
+      console.log('🔍 FRONTEND LOGIN - Data:', error.response?.data);
+      
       const message = error.response?.data?.message || 'Erreur de connexion';
       toast.error(message);
       return { success: false, error: message };

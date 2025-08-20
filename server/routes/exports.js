@@ -408,7 +408,11 @@ function calculateRepartitionFrequences(dysfonctionnements) {
   const repartition = {};
   
   dysfonctionnements.forEach(d => {
-    repartition[d.frequence] = (repartition[d.frequence] || 0) + 1;
+    if (!repartition[d.frequence]) {
+      repartition[d.frequence] = { nombre: 0, cout: 0 };
+    }
+    repartition[d.frequence].nombre += 1;
+    repartition[d.frequence].cout += parseFloat(d.cout_annuel) || 0;
   });
   
   return repartition;

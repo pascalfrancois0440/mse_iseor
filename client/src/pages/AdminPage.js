@@ -124,6 +124,22 @@ const AdminPage = () => {
     }
   };
 
+  // Initialiser le référentiel ISEOR
+  const initReferentielIseor = async () => {
+    if (!window.confirm('Êtes-vous sûr de vouloir initialiser le référentiel ISEOR ? Cette action ajoutera tous les éléments du référentiel.')) {
+      return;
+    }
+
+    try {
+      const response = await axios.post('/api/admin/init-referentiel');
+      toast.success('Référentiel ISEOR initialisé avec succès');
+      console.log('Référentiel initialisé:', response.data);
+    } catch (error) {
+      console.error('Erreur initialisation référentiel:', error);
+      toast.error(error.response?.data?.message || 'Erreur lors de l\'initialisation du référentiel');
+    }
+  };
+
   const startEdit = (userToEdit) => {
     setEditingUser(userToEdit);
     reset({
@@ -178,13 +194,22 @@ const AdminPage = () => {
             Gérez les comptes utilisateurs de l'application MSE Diagnostic
           </p>
         </div>
-        <button
-          onClick={() => setShowCreateForm(true)}
-          className="btn-primary flex items-center"
-        >
-          <Plus className="h-5 w-5 mr-2" />
-          Nouvel utilisateur
-        </button>
+        <div className="flex space-x-3">
+          <button
+            onClick={initReferentielIseor}
+            className="btn-secondary flex items-center"
+          >
+            <Shield className="h-5 w-5 mr-2" />
+            Initialiser Référentiel ISEOR
+          </button>
+          <button
+            onClick={() => setShowCreateForm(true)}
+            className="btn-primary flex items-center"
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            Nouvel utilisateur
+          </button>
+        </div>
       </div>
 
       {/* Barre de recherche */}
@@ -232,40 +257,44 @@ const AdminPage = () => {
                 )}
               </div>
 
-              {!editingUser && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Mot de passe *
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      {...register('password', { 
-                        required: 'Mot de passe requis',
-                        minLength: {
-                          value: 8,
-                          message: 'Le mot de passe doit contenir au moins 8 caractères'
-                        }
-                      })}
-                      className="input-field pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-5 w-5 text-gray-400" />
-                      ) : (
-                        <Eye className="h-5 w-5 text-gray-400" />
-                      )}
-                    </button>
-                  </div>
-                  {errors.password && (
-                    <p className="text-red-600 text-sm mt-1">{errors.password.message}</p>
-                  )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {editingUser ? 'Nouveau mot de passe (optionnel)' : 'Mot de passe *'}
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    {...register('password', { 
+                      required: editingUser ? false : 'Mot de passe requis',
+                      minLength: {
+                        value: 8,
+                        message: 'Le mot de passe doit contenir au moins 8 caractères'
+                      }
+                    })}
+                    className="input-field pr-10"
+                    placeholder={editingUser ? 'Laisser vide pour conserver le mot de passe actuel' : ''}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5 text-gray-400" />
+                    ) : (
+                      <Eye className="h-5 w-5 text-gray-400" />
+                    )}
+                  </button>
                 </div>
-              )}
+                {errors.password && (
+                  <p className="text-red-600 text-sm mt-1">{errors.password.message}</p>
+                )}
+                {editingUser && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    Saisissez un nouveau mot de passe pour le modifier, ou laissez vide pour conserver l'actuel
+                  </p>
+                )}
+              </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">

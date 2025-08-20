@@ -24,25 +24,7 @@ const StatistiquesEntretien = ({ entretien }) => {
   const statistiques = entretien.statistiques || {};
   const dysfonctionnements = entretien.dysfonctionnements || [];
 
-  // Données pour le graphique des domaines ISEOR
-  const domaineData = Object.entries(statistiques.repartition_domaines || {}).map(([domaine, data]) => ({
-    domaine: `Domaine ${domaine}`,
-    nombre: data.nombre,
-    cout: data.cout
-  }));
-
-  // Données pour le tableau 5x4
-  const tableau5x4 = statistiques.tableau_5x4 || {};
-
-  // Données pour la répartition par fréquence
-  const frequenceData = Object.entries(statistiques.repartition_frequences || {}).map(([freq, count]) => ({
-    frequence: freq,
-    nombre: count
-  }));
-
-  // Couleurs pour les graphiques
-  const COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4'];
-
+  // Labels des domaines ISEOR - DOIT être déclaré AVANT utilisation
   const domaineLabels = {
     1: "Conditions de travail",
     2: "Organisation du travail", 
@@ -51,6 +33,54 @@ const StatistiquesEntretien = ({ entretien }) => {
     5: "Formation intégrée",
     6: "Mise en œuvre stratégique"
   };
+
+  // Données pour le graphique des domaines ISEOR (amélioré et sécurisé)
+  const domaineData = Object.entries(statistiques.repartition_domaines || {})
+    .filter(([domaine, data]) => data && data.nombre > 0) // Filtrer les domaines vides
+    .map(([domaine, data]) => ({
+      domaine: domaineLabels[domaine] || `Domaine ${domaine}`,
+      nombre: data.nombre || 0,
+      cout: data.cout || 0
+    }));
+
+  // Données pour le tableau 5x4
+  const tableau5x4 = statistiques.tableau_5x4 || {};
+
+  // Données pour la répartition par fréquence (amélioré et sécurisé)
+  console.log('🔍 FRONTEND DEBUG - Statistiques reçues:', statistiques);
+  console.log('🔍 FRONTEND DEBUG - repartition_frequences brut:', statistiques.repartition_frequences);
+  console.log('🔍 FRONTEND DEBUG - Type de repartition_frequences:', typeof statistiques.repartition_frequences);
+  console.log('🔍 FRONTEND DEBUG - Clés de repartition_frequences:', Object.keys(statistiques.repartition_frequences || {}));
+  console.log('🔍 FRONTEND DEBUG - Valeurs de repartition_frequences:', Object.values(statistiques.repartition_frequences || {}));
+  console.log('🔍 FRONTEND DEBUG - Entries de repartition_frequences:', Object.entries(statistiques.repartition_frequences || {}));
+  
+  // Traitement des données de fréquence avec coûts
+  console.log('🔍 FRONTEND DEBUG - repartition_frequences reçues:', statistiques.repartition_frequences);
+  console.log('🔍 FRONTEND DEBUG - statistiques complètes:', statistiques);
+  
+  const frequenceData = Object.entries(statistiques.repartition_frequences || {})
+    .filter(([freq, data]) => {
+      console.log(`🔍 Filtrage fréquence "${freq}":`, data);
+      return data; // Garde toutes les fréquences, même avec cout/nombre = 0
+    })
+    .map(([freq, data]) => ({
+      frequence: freq,
+      nombre: data.nombre || 0,
+      cout: data.cout || 0
+    }));
+    
+  console.log('🔍 FRONTEND DEBUG - frequenceData finale:', frequenceData);
+  console.log('🔍 FRONTEND DEBUG - frequenceData avec valeurs:', frequenceData.map(item => `${item.frequence}: nombre=${item.nombre}, cout=${item.cout}`));
+  
+  // Solution définitive : affiche toujours un graphique même si pas de données
+  const frequenceDataFinal = frequenceData.length > 0 ? frequenceData : [
+    { frequence: 'Pas de données', nombre: 1, cout: 0 }
+  ];
+      
+  console.log('🔍 FRONTEND DEBUG - frequenceData après traitement:', frequenceData);
+
+  // Couleurs pour les graphiques
+  const COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4'];
 
   // Formatage des montants
   const formatCurrency = (value) => {
@@ -145,15 +175,27 @@ const StatistiquesEntretien = ({ entretien }) => {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={domaineData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="domaine" />
-                <YAxis />
+                <XAxis 
+                  dataKey="domaine" 
+                  tick={{ fontSize: 12 }}
+                  interval={0}
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                />
+                <YAxis 
+                  allowDecimals={false}
+                  domain={[0, 'dataMax']}
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(value) => formatCurrency(value)}
+                />
                 <Tooltip 
                   formatter={(value, name) => [
-                    name === 'cout' ? formatCurrency(value) : value,
-                    name === 'cout' ? 'Coût' : 'Nombre'
+                    formatCurrency(value),
+                    'Coût annuel'
                   ]}
                 />
-                <Bar dataKey="nombre" fill="#3b82f6" name="Nombre" />
+                <Bar dataKey="cout" fill="#3b82f6" name="Coût annuel" />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -172,11 +214,11 @@ const StatistiquesEntretien = ({ entretien }) => {
             </h3>
           </div>
           
-          {frequenceData.length > 0 ? (
+          {frequenceDataFinal && frequenceDataFinal.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={frequenceData}
+                  data={frequenceDataFinal}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -185,11 +227,16 @@ const StatistiquesEntretien = ({ entretien }) => {
                   fill="#8884d8"
                   dataKey="nombre"
                 >
-                  {frequenceData.map((entry, index) => (
+                  {frequenceDataFinal.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip 
+                  formatter={(value, name) => [
+                    value,
+                    'Nombre de dysfonctionnements'
+                  ]}
+                />
               </PieChart>
             </ResponsiveContainer>
           ) : (

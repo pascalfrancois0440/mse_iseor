@@ -13,7 +13,7 @@ const initReferentielRoutes = require('./routes/init-referentiel');
 const { sequelize } = require('./config/database');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = 5008; // Changed to 5008 to avoid port conflict
 
 // Middleware de sécurité
 app.use(helmet());
@@ -41,6 +41,16 @@ app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// Middleware de logging pour debug
+app.use((req, res, next) => {
+  console.log(`🔍 SERVER - ${req.method} ${req.path}`);
+  if (req.path.includes('/auth/login')) {
+    console.log('🔍 SERVER - Headers:', req.headers);
+    console.log('🔍 SERVER - Body:', req.body);
+  }
+  next();
+});
+
 // Routes API
 app.use('/api/auth', authRoutes);
 app.use('/api/entretiens', entretienRoutes);
@@ -63,6 +73,69 @@ app.get('/api/health', (req, res) => {
 // Route de test simple
 app.get('/test', (req, res) => {
   res.send('<h1>Backend MSE Diagnostic fonctionne !</h1><p>Port: ' + PORT + '</p>');
+});
+
+// Route de debug temporaire pour tester les fréquences (SANS AUTH)
+app.get('/debug-freq/:id', async (req, res) => {
+  try {
+    const { Dysfonctionnement } = require('./models');
+    
+    const dysfonctionnements = await Dysfonctionnement.findAll({
+      where: { entretien_id: req.params.id }
+    });
+    
+    console.log('🔍 DEBUG PUBLIC - Dysfonctionnements trouvés:', dysfonctionnements.length);
+    
+    const repartitionFrequences = { 'Très fréquent': 0, 'Fréquent': 0, 'Occasionnel': 0, 'Rare': 0 };
+    
+    dysfonctionnements.forEach((d, index) => {
+      console.log(`🔍 DEBUG PUBLIC - Dysfonctionnement ${index + 1}:`, {
+        id: d.id,
+        frequence: d.frequence,
+        description: d.description?.substring(0, 30) + '...'
+      });
+      
+      if (d && d.frequence && typeof d.frequence === 'string') {
+        const freq = d.frequence.toLowerCase().trim();
+        console.log(`🔍 DEBUG PUBLIC - Fréquence analysée: "${freq}"`);
+        
+        if (freq.includes('très') || freq.includes('tres')) {
+          repartitionFrequences['Très fréquent']++;
+          console.log('✅ Comptabilisé comme "Très fréquent"');
+        } else if (freq.includes('fréquent') || freq.includes('frequent')) {
+          repartitionFrequences['Fréquent']++;
+          console.log('✅ Comptabilisé comme "Fréquent"');
+        } else if (freq.includes('occasionnel')) {
+          repartitionFrequences['Occasionnel']++;
+          console.log('✅ Comptabilisé comme "Occasionnel"');
+        } else if (freq.includes('rare')) {
+          repartitionFrequences['Rare']++;
+          console.log('✅ Comptabilisé comme "Rare"');
+        } else {
+          console.log('❌ Fréquence non reconnue:', freq);
+        }
+      } else {
+        console.log('❌ Fréquence invalide ou manquante');
+      }
+    });
+    
+    console.log('🔍 DEBUG PUBLIC - Répartition finale:', repartitionFrequences);
+    
+    res.json({
+      success: true,
+      entretien_id: req.params.id,
+      nombre_dysfonctionnements: dysfonctionnements.length,
+      dysfonctionnements: dysfonctionnements.map(d => ({
+        id: d.id,
+        frequence: d.frequence,
+        description: d.description?.substring(0, 50)
+      })),
+      repartition_frequences: repartitionFrequences
+    });
+  } catch (error) {
+    console.error('Erreur debug public:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Route de debug pour vérifier la base de données
@@ -200,6 +273,16 @@ app.get('/api/init-admin', async (req, res) => {
   }
 });
 
+// Middleware de logging pour debug
+app.use((req, res, next) => {
+  console.log(`🔍 SERVER - ${req.method} ${req.path}`);
+  if (req.path.includes('/auth/login')) {
+    console.log('🔍 SERVER - Headers:', req.headers);
+    console.log('🔍 SERVER - Body:', req.body);
+  }
+  next();
+});
+
 // Gestion des erreurs 404
 app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route non trouvée' });
@@ -221,7 +304,11 @@ async function startServer() {
     console.log('✅ Connexion à la base de données établie');
     
     // Synchroniser les tables (development et production)
-    await sequelize.sync({ alter: process.env.NODE_ENV === 'development' });
+    // Ne pas forcer la recréation pour préserver les données
+    await sequelize.sync({ 
+      force: false,
+      alter: process.env.NODE_ENV === 'production' 
+    });
     console.log('✅ Tables synchronisées');
     
     // Initialiser les comptes admin permanents

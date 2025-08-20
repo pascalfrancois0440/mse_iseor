@@ -40,23 +40,27 @@ router.post('/register', async (req, res) => {
 });
 
 // POST /api/auth/login - Connexion
-router.post('/login', [
-  body('email').isEmail().normalizeEmail(),
-  body('password').notEmpty()
-], async (req, res) => {
+router.post('/login', async (req, res) => {
+  console.log('🔍 LOGIN ROUTE - Début de la route login');
+  console.log('🔍 LOGIN ROUTE - Body reçu:', req.body);
+  console.log('🔍 LOGIN ROUTE - Headers:', req.headers);
+  
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
+    const { email, password } = req.body;
+
+    // Validation manuelle simple
+    if (!email || !password) {
+      console.log('🔍 LOGIN ROUTE - Email ou mot de passe manquant');
       return res.status(400).json({ 
-        message: 'Email ou mot de passe invalide' 
+        message: 'Email et mot de passe requis' 
       });
     }
 
-    const { email, password } = req.body;
-
-    // Trouver l'utilisateur
-    const user = await User.findOne({ where: { email, actif: true } });
+    // Trouver l'utilisateur (normaliser l'email manuellement)
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ where: { email: normalizedEmail, actif: true } });
     if (!user) {
+      console.log(`🔍 LOGIN ROUTE - Utilisateur non trouvé pour: ${normalizedEmail}`);
       return res.status(401).json({ message: 'Email ou mot de passe incorrect' });
     }
 
@@ -83,7 +87,7 @@ router.post('/login', [
       user: user.toJSON()
     });
   } catch (error) {
-    console.error('Erreur connexion:', error);
+    console.error('🔍 LOGIN ROUTE - Erreur connexion:', error);
     res.status(500).json({ message: 'Erreur lors de la connexion' });
   }
 });
@@ -238,17 +242,30 @@ router.post('/change-password', authenticateToken, [
   body('newPassword').isLength({ min: 8 })
 ], async (req, res) => {
   try {
-    const { currentPassword, newPassword } = req.body;
-    
-    const user = await User.findByPk(req.user.id);
+    const { email, password } = req.body;
+
+    // Vérifier si l'utilisateur existe
+    const user = await User.findOne({ 
+      where: { 
+        email,
+        actif: true 
+      } 
+    });
+
     if (!user) {
-      return res.status(404).json({ message: 'Utilisateur non trouvé' });
+      return res.status(401).json({ message: 'Email ou mot de passe incorrect' });
     }
 
-    // Vérifier le mot de passe actuel
-    const isValidPassword = await user.verifierMotDePasse(currentPassword);
+    console.log(`🔍 LOGIN DEBUG - Tentative connexion pour: ${email}`);
+    console.log(`🔍 LOGIN DEBUG - Mot de passe en base: ${user.password.substring(0, 20)}...`);
+    console.log(`🔍 LOGIN DEBUG - Mot de passe saisi: ${password}`);
+
+    // Vérifier le mot de passe
+    const isValidPassword = await user.verifierMotDePasse(password);
+    console.log(`🔍 LOGIN DEBUG - Résultat vérification: ${isValidPassword}`);
+    
     if (!isValidPassword) {
-      return res.status(401).json({ message: 'Mot de passe actuel incorrect' });
+      return res.status(401).json({ message: 'Email ou mot de passe incorrect' });
     }
 
     await user.update({ password: newPassword });
@@ -349,6 +366,7 @@ router.get('/admin/users', authenticateToken, requireAdmin, async (req, res) => 
 // PUT /api/auth/admin/users/:id - Modification d'utilisateur par un administrateur
 router.put('/admin/users/:id', authenticateToken, requireAdmin, [
   body('email').optional().isEmail().normalizeEmail(),
+  body('password').optional().isLength({ min: 8 }).withMessage('Le mot de passe doit contenir au moins 8 caractères'),
   body('nom').optional().trim().isLength({ min: 2 }),
   body('prenom').optional().trim().isLength({ min: 2 }),
   body('role').optional().isIn(['consultant', 'administrateur']),
@@ -364,7 +382,7 @@ router.put('/admin/users/:id', authenticateToken, requireAdmin, [
     }
 
     const { id } = req.params;
-    const { email, nom, prenom, role, organisation, telephone, actif } = req.body;
+    const { email, password, nom, prenom, role, organisation, telephone, actif } = req.body;
 
     const user = await User.findByPk(id);
     if (!user) {
@@ -381,7 +399,8 @@ router.put('/admin/users/:id', authenticateToken, requireAdmin, [
       }
     }
 
-    await user.update({
+    // Préparer les données de mise à jour
+    const updateData = {
       email: email || user.email,
       nom: nom || user.nom,
       prenom: prenom || user.prenom,
@@ -389,7 +408,26 @@ router.put('/admin/users/:id', authenticateToken, requireAdmin, [
       organisation: organisation !== undefined ? organisation : user.organisation,
       telephone: telephone !== undefined ? telephone : user.telephone,
       actif: actif !== undefined ? actif : user.actif
-    });
+    };
+
+    // Ajouter le mot de passe seulement s'il est fourni
+    if (password && password.trim() !== '') {
+      updateData.password = password;
+      console.log(`🔍 ADMIN DEBUG - Mise à jour mot de passe pour utilisateur ${id}`);
+      console.log(`🔍 ADMIN DEBUG - Nouveau mot de passe: ${password}`);
+    }
+
+    await user.update(updateData);
+
+    // Log pour vérifier le hachage du mot de passe
+    if (password && password.trim() !== '') {
+      const updatedUser = await User.findByPk(id);
+      console.log(`🔍 ADMIN DEBUG - Mot de passe haché en base: ${updatedUser.password.substring(0, 20)}...`);
+      
+      // Test immédiat de vérification
+      const testVerification = await updatedUser.verifierMotDePasse(password);
+      console.log(`🔍 ADMIN DEBUG - Test vérification immédiate: ${testVerification}`);
+    }
 
     res.json({
       message: 'Utilisateur modifié avec succès',

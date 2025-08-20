@@ -68,6 +68,57 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Route de debug temporaire pour tester les fréquences
+router.get('/:id/debug-freq', async (req, res) => {
+  try {
+    const dysfonctionnements = await Dysfonctionnement.findAll({
+      where: { entretien_id: req.params.id }
+    });
+    
+    console.log(`🔍 BACKEND DEBUG - Entretien ${req.params.id} trouvé avec ${dysfonctionnements.length} dysfonctionnements`);
+    console.log(`🔍 BACKEND DEBUG - Dysfonctionnements:`, dysfonctionnements.map(d => ({ 
+      description: d.description, 
+      frequence: d.frequence, 
+      cout_annuel: d.cout_annuel 
+    })));
+    
+    const repartitionFrequences = { 'Très fréquent': 0, 'Fréquent': 0, 'Occasionnel': 0, 'Rare': 0 };
+    
+    dysfonctionnements.forEach((d, index) => {
+      console.log(`🔍 DEBUG ROUTE - Dysfonctionnement ${index + 1}:`, {
+        id: d.id,
+        frequence: d.frequence,
+        description: d.description?.substring(0, 30) + '...'
+      });
+      
+      if (d && d.frequence && typeof d.frequence === 'string') {
+        const freq = d.frequence.toLowerCase().trim();
+        if (freq.includes('très') || freq.includes('tres')) repartitionFrequences['Très fréquent']++;
+        else if (freq.includes('fréquent') || freq.includes('frequent')) repartitionFrequences['Fréquent']++;
+        else if (freq.includes('occasionnel')) repartitionFrequences['Occasionnel']++;
+        else if (freq.includes('rare')) repartitionFrequences['Rare']++;
+      }
+    });
+    
+    console.log('🔍 DEBUG ROUTE - Répartition finale:', repartitionFrequences);
+    
+    res.json({
+      success: true,
+      entretien_id: req.params.id,
+      nombre_dysfonctionnements: dysfonctionnements.length,
+      dysfonctionnements: dysfonctionnements.map(d => ({
+        id: d.id,
+        frequence: d.frequence,
+        description: d.description?.substring(0, 50)
+      })),
+      repartition_frequences: repartitionFrequences
+    });
+  } catch (error) {
+    console.error('Erreur debug route:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GET /api/entretiens/:id - Détail d'un entretien
 router.get('/:id', async (req, res) => {
   try {
@@ -156,6 +207,28 @@ router.get('/:id', async (req, res) => {
       }
     });
 
+    // Répartition par fréquence avec coûts
+    const repartitionFrequences = {};
+    
+    dysfonctionnements.forEach(d => {
+      if (d.frequence) {
+        // Utiliser directement les fréquences saisies sans mapping
+        let frequenceStandard = d.frequence;
+        
+        console.log(`🔍 BACKEND DEBUG - Fréquence "${d.frequence}" utilisée directement: "${frequenceStandard}"`);
+        console.log(`🔍 BACKEND DEBUG - Coût annuel: ${d.cout_annuel}`);
+        console.log(`🔍 BACKEND DEBUG - Ajout à repartitionFrequences[${frequenceStandard}]`);
+        
+        if (!repartitionFrequences[frequenceStandard]) {
+          repartitionFrequences[frequenceStandard] = { nombre: 0, cout: 0 };
+        }
+        repartitionFrequences[frequenceStandard].nombre += 1;
+        repartitionFrequences[frequenceStandard].cout += parseFloat(d.cout_annuel) || 0;
+      }
+    });
+
+    console.log(`🔍 BACKEND DEBUG - repartitionFrequences final:`, repartitionFrequences);
+
     const entretienComplet = {
       ...entretien.toJSON(),
       statistiques: {
@@ -163,6 +236,7 @@ router.get('/:id', async (req, res) => {
         cout_total_annuel: coutTotal,
         ratio_ca: entretien.ca_perimetre ? (coutTotal / entretien.ca_perimetre * 100) : 0,
         repartition_domaines: repartitionDomaines,
+        repartition_frequences: repartitionFrequences,
         tableau_5x4: tableau5x4
       }
     };

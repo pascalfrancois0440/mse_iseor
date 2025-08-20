@@ -74,7 +74,9 @@ const User = sequelize.define('User', {
     },
     beforeUpdate: async (user) => {
       if (user.changed('password') && user.password) {
+        console.log('🔍 HOOK - Hachage du nouveau mot de passe:', user.password);
         user.password = await bcrypt.hash(user.password, 12);
+        console.log('🔍 HOOK - Mot de passe haché:', user.password.substring(0, 20) + '...');
       }
     }
   }
@@ -82,8 +84,18 @@ const User = sequelize.define('User', {
 
 // Méthode pour vérifier le mot de passe
 User.prototype.verifierMotDePasse = async function(motDePasse) {
-  if (!this.password) return false;
-  return await bcrypt.compare(motDePasse, this.password);
+  console.log('🔍 USER MODEL - Vérification mot de passe');
+  console.log('🔍 USER MODEL - Mot de passe fourni:', motDePasse);
+  console.log('🔍 USER MODEL - Hash en base:', this.password ? this.password.substring(0, 20) + '...' : 'null');
+  
+  if (!this.password) {
+    console.log('🔍 USER MODEL - Pas de mot de passe en base');
+    return false;
+  }
+  
+  const result = await bcrypt.compare(motDePasse, this.password);
+  console.log('🔍 USER MODEL - Résultat comparaison:', result);
+  return result;
 };
 
 // Méthode pour obtenir les informations publiques
