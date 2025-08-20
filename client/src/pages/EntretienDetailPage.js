@@ -321,8 +321,8 @@ const EntretienDetailPage = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">PRISM</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {entretien.prism_calcule && typeof entretien.prism_calcule === 'number' ? 
-                  `${entretien.prism_calcule.toFixed(2)}€/h` : 
+                {entretien.prism_calcule && !isNaN(parseFloat(entretien.prism_calcule)) ? 
+                  `${parseFloat(entretien.prism_calcule).toFixed(2)}€/h` : 
                   'N/A'
                 }
               </p>
@@ -491,8 +491,8 @@ const EntretienDetailPage = () => {
                 <div>
                   <dt className="text-sm font-medium text-gray-500">PRISM calculé</dt>
                   <dd className="text-sm text-gray-900 font-medium">
-                    {entretien.prism_calcule && typeof entretien.prism_calcule === 'number' ? 
-                      `${entretien.prism_calcule.toFixed(2)} €/heure` : 
+                    {entretien.prism_calcule && !isNaN(parseFloat(entretien.prism_calcule)) ? 
+                      `${parseFloat(entretien.prism_calcule).toFixed(2)} €/heure` : 
                       'Non calculé'
                     }
                   </dd>
