@@ -13,7 +13,7 @@ const initReferentielRoutes = require('./routes/init-referentiel');
 const { sequelize } = require('./config/database');
 
 const app = express();
-const PORT = 5008; // Changed to 5008 to avoid port conflict
+const PORT = process.env.PORT || 5000; // Use environment PORT or default to 5000
 
 // Middleware de sécurité
 app.use(helmet());
