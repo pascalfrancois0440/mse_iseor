@@ -22,6 +22,8 @@ app.use(cors({
     'http://localhost:3000',
     'http://localhost:3001',
     'http://e88o0448k88kk84c4ssksgoo.31.97.69.164.sslip.io',
+    'http://es8oo448k88kk84c4ssksgoo.31.97.69.164.sslip.io',
+    'https://es8oo448k88kk84c4ssksgoo.31.97.69.164.sslip.io',
     process.env.FRONTEND_URL
   ].filter(Boolean),
   credentials: true,
