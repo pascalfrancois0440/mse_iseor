@@ -10,7 +10,6 @@ const ReferentielIseor = sequelize.define('ReferentielIseor', {
   code: {
     type: DataTypes.STRING,
     allowNull: false,
-    unique: true,
     comment: 'Code numérique (ex: 101, 102, etc.)'
   },
   domaine: {
@@ -76,6 +75,7 @@ const ReferentielIseor = sequelize.define('ReferentielIseor', {
       fields: ['domaine', 'ordre_affichage']
     },
     {
+      unique: true,
       fields: ['code']
     }
   ]
